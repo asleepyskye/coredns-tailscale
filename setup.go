@@ -34,6 +34,8 @@ func setup(c *caddy.Controller) error {
 					return plugin.Error("tailscale", c.ArgErr())
 				}
 				ts.hostname = args[0]
+			case "no-service":
+				ts.noService = true
 			case "fallthrough":
 				ts.fall.SetZonesFromArgs(c.RemainingArgs())
 

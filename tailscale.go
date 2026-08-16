@@ -24,6 +24,7 @@ type Tailscale struct {
 
 	authkey  string
 	hostname string
+	noService bool
 	srv      *tsnet.Server
 	lc       *local.Client
 
@@ -147,19 +148,21 @@ func (t *Tailscale) processNetMap(nm *netmap.NetworkMap) {
 
 	// Grab service (VIP) definitions from the only place the API seems to return them accessible
 	// via the netmap.
-	for _, rec := range nm.DNS.ExtraRecords {
-		name := strings.Split(rec.Name, ".")[0]
-		ip, err := netip.ParseAddr(rec.Value)
-		if err != nil {
-			log.Errorf("Error parsing DNS extra record value \"%s\" as netip: %v", rec.Value, err)
-		}
-		if _, ok := entries[name]; !ok {
-			entries[name] = map[string][]string{}
-		}
-		if ip.Is6() {
-			entries[name]["AAAA"] = append(entries[name]["AAAA"], ip.String())
-		} else {
-			entries[name]["A"] = append(entries[name]["A"], ip.String())
+	if !t.noService {
+		for _, rec := range nm.DNS.ExtraRecords {
+			name := strings.Split(rec.Name, ".")[0]
+			ip, err := netip.ParseAddr(rec.Value)
+			if err != nil {
+				log.Errorf("Error parsing DNS extra record value \"%s\" as netip: %v", rec.Value, err)
+			}
+			if _, ok := entries[name]; !ok {
+				entries[name] = map[string][]string{}
+			}
+			if ip.Is6() {
+				entries[name]["AAAA"] = append(entries[name]["AAAA"], ip.String())
+			} else {
+				entries[name]["A"] = append(entries[name]["A"], ip.String())
+			}
 		}
 	}
 
